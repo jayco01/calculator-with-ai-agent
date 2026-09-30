@@ -1,4 +1,5 @@
 import os
+import argparse
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -13,14 +14,29 @@ client = OpenAI(
     api_key=api_key,
 )
 
+parser = argparse.ArgumentParser(description="Chatbot")
+parser.add_argument("user_prompt", type=str, help="User prompt")
+args = parser.parse_args()
+
 response = client.chat.completions.create(
     model="openrouter/free",
     messages=[
         {
             "role": "user",
-            "content": "Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum.",
+            "content": args.user_prompt,
         }
     ],
 )
 
-print(response.choices[0].message.content)
+prompt_tokens_used = response.usage.prompt_tokens
+completion_tokens_used = response.usage.completion_tokens
+
+response_content = response.choices[0].message.content
+
+if response_content is None:
+    raise RuntimeError("OpenRouter response content not set")
+
+print(f"Prompt tokens: {prompt_tokens_used}")
+print(f"Response tokens: {completion_tokens_used}")
+
+print(response_content)
