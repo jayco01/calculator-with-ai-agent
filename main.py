@@ -3,6 +3,8 @@ import argparse
 from dotenv import load_dotenv
 from openai import OpenAI
 from prompt import *
+from call_function import *
+import json
 
 load_dotenv()
 api_key = os.getenv("OPENROUTER_API_KEY")
@@ -30,20 +32,25 @@ messages = [
 response = client.chat.completions.create(
     model="openrouter/free",
     messages=messages,
-    temperature=0
+    tools=available_functions,
 )
 
 prompt_tokens_used = response.usage.prompt_tokens
 completion_tokens_used = response.usage.completion_tokens
 
-response_content = response.choices[0].message.content
+# response_content = response.choices[0].message.content
+ai_message = response.choices[0].message
 
-if response_content is None:
-    raise RuntimeError("OpenRouter response content not set")
+# if response_content is None:
+#     raise RuntimeError("OpenRouter response content not set")
 
 if args.verbose:
     print(f"User prompt: {args.user_prompt}")
     print(f"Prompt tokens: {prompt_tokens_used}")
     print(f"Response tokens: {completion_tokens_used}")
 
-print(response_content)
+for tool_call in ai_message.tool_calls:
+    function_args = json.loads(tool_call.function.arguments or "{}")
+    print(f"Calling function: {tool_call.function.name}({function_args})")
+#
+# print(response_content)
