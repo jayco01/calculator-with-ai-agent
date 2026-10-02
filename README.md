@@ -1,0 +1,1 @@
+ This project is my solution for boot.dev's "Build an AI Agent" course. I was rushed because I was using it to get ready for the IEEE AI Hackathon in Calgary, so I used Claude to refactor my original code.
