@@ -1,5 +1,5 @@
 import os
-from config import *
+from config import MAX_CHARS
 
 schema_get_file_content = {
     "type": "function",

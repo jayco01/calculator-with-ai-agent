@@ -1,53 +1,30 @@
-import os
 import argparse
-from dotenv import load_dotenv
-from openai import OpenAI
-from prompt import *
-from call_function import *
-import json
 
-load_dotenv()
-api_key = os.getenv("OPENROUTER_API_KEY")
-
-if not api_key:
-    raise RuntimeError("OpenRouter API key not set")
-
-client = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=api_key,
-)
-
-parser = argparse.ArgumentParser(description="Chatbot")
-parser.add_argument("user_prompt", type=str, help="User prompt")
-parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+from call_function import run_tool_calls
+from llm import create_client, generate_content
+from prompt import system_prompt
 
 
-args = parser.parse_args()
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Chatbot")
+    parser.add_argument("user_prompt", type=str, help="User prompt")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    return parser.parse_args()
 
-messages = [
-    {"role": "system", "content": system_prompt},
-    {"role": "user", "content": args.user_prompt},
-]
 
-response = client.chat.completions.create(
-    model="openrouter/free",
-    messages=messages,
-    tools=available_functions,
-)
+def main() -> None:
+    args = parse_args()
+    client = create_client()
 
-prompt_tokens_used = response.usage.prompt_tokens
-completion_tokens_used = response.usage.completion_tokens
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": args.user_prompt},
+    ]
 
-ai_message = response.choices[0].message
+    response = generate_content(client, messages)
+    ai_message = response.choices[0].message
+    tool_messages = run_tool_calls(ai_message.tool_calls or [], args.verbose)
 
-for tool_call in ai_message.tool_calls:
-    result_message = None
-    if args.verbose:
-        result_message = call_function(tool_call=tool_call, verbose=True)
-        if not result_message["content"]:
-            raise Exception("No content provided")
-        print(f"-> {result_message['content']}")
-    else:
-        if not result_message["content"]:
-            raise Exception("No content provided")
-        result_message = call_function(tool_call)
+
+if __name__ == "__main__":
+    main()

@@ -43,8 +43,6 @@ def run_python_file(
         if not target_path.endswith(".py"):
             return f'Error: "{file_path}" is not a Python file'
 
-        os.makedirs(os.path.dirname(target_path), exist_ok=True)
-
         command = ["python", target_path]
 
         if args:
