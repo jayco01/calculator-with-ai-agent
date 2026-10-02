@@ -38,19 +38,16 @@ response = client.chat.completions.create(
 prompt_tokens_used = response.usage.prompt_tokens
 completion_tokens_used = response.usage.completion_tokens
 
-# response_content = response.choices[0].message.content
 ai_message = response.choices[0].message
 
-# if response_content is None:
-#     raise RuntimeError("OpenRouter response content not set")
-
-if args.verbose:
-    print(f"User prompt: {args.user_prompt}")
-    print(f"Prompt tokens: {prompt_tokens_used}")
-    print(f"Response tokens: {completion_tokens_used}")
-
 for tool_call in ai_message.tool_calls:
-    function_args = json.loads(tool_call.function.arguments or "{}")
-    print(f"Calling function: {tool_call.function.name}({function_args})")
-#
-# print(response_content)
+    result_message = None
+    if args.verbose:
+        result_message = call_function(tool_call=tool_call, verbose=True)
+        if not result_message["content"]:
+            raise Exception("No content provided")
+        print(f"-> {result_message['content']}")
+    else:
+        if not result_message["content"]:
+            raise Exception("No content provided")
+        result_message = call_function(tool_call)

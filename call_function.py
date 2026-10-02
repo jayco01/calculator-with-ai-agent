@@ -2,6 +2,8 @@ from functions.get_files_info import *
 from functions.get_file_content import *
 from functions.write_file import *
 from functions.run_python_files import *
+import json
+from collections.abc import Callable
 
 available_functions = [
     schema_get_files_info,
@@ -12,6 +14,36 @@ available_functions = [
 
 def call_function(tool_call, verbose: bool = False) -> dict:
     function_name = tool_call.function.name
-    function_arguments = tool_call.function.arguments
+    function_arguments = json.loads(tool_call.function.arguments or "{}")
     tool_call_id = tool_call.id
+    working_directory = "./calculator"
+
+    if verbose:
+        print(f" - Calling function: {function_name}({function_arguments})")
+    else:
+        print(f" - Calling function: {function_name}")
+
+    function_map: dict[str, Callable[..., str]] = {
+        "get_file_content": get_file_content,
+        "get_files_info": get_files_info,
+        "write_file": write_file,
+        "run_python_file": run_python_file,
+    }
+
+    if function_name not in function_map:
+        return {
+            "role": "tool",
+            "tool_call_id": tool_call_id,
+            "content": f"Error: Unknown function: {function_name}",
+        }
+
+    function_arguments["working_directory"] = working_directory
+
+    result = function_map[function_name](**function_arguments)
+
+    return {
+        "role": "tool",
+        "tool_call_id": tool_call_id,
+        "content": result,
+    }
 
