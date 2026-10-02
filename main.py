@@ -1,8 +1,10 @@
 import argparse
+import sys
 
 from call_function import run_tool_calls
 from llm import create_client, generate_content
 from prompt import system_prompt
+from config import *
 
 
 def parse_args() -> argparse.Namespace:
@@ -21,9 +23,21 @@ def main() -> None:
         {"role": "user", "content": args.user_prompt},
     ]
 
-    response = generate_content(client, messages)
-    ai_message = response.choices[0].message
-    tool_messages = run_tool_calls(ai_message.tool_calls or [], args.verbose)
+
+    for _ in range(NUM_OF_ITERATIONS):
+        response = generate_content(client, messages)
+        ai_message = response.choices[0].message
+        messages.append(ai_message)
+        tool_messages = run_tool_calls(ai_message.tool_calls or [], args.verbose)
+        messages.extend(tool_messages)
+
+        if not tool_messages:
+            print(ai_message.content)
+            return
+
+    print(f"Error: agent reached the maximum of {20} iterations without a final response")
+    sys.exit(1)
+
 
 
 if __name__ == "__main__":
